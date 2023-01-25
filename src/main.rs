@@ -1,11 +1,9 @@
-use iced::{keyboard, Settings};
 use iced::widget::canvas::{Cache, Cursor, Geometry};
 use iced::widget::{canvas, container};
 use iced::{executor, window, Event, Size};
+use iced::{keyboard, Settings};
 use iced::{Application, Color, Command, Element, Length, Point, Rectangle, Subscription, Theme};
 use rand::prelude::*;
-
-mod fire;
 
 pub fn main() -> iced::Result {
     let width = 800_u32;
@@ -280,13 +278,17 @@ impl<Message> canvas::Program<Message> for DoomFire {
                         y: (row * self.pixel_size) as f32,
                     };
 
-                    let content = if let Some(value) = self.fire.get(pixel_index as usize) {
-                        value.to_string()
-                    } else {
-                        String::from("-1")
-                    };
+                    let color = self.get_color(pixel_index as usize);
+
+                    frame.fill_rectangle(position, pixel_size_widget, color);
 
                     if self.debug {
+                        let content = if let Some(value) = self.fire.get(pixel_index as usize) {
+                            value.to_string()
+                        } else {
+                            String::from("-1")
+                        };
+
                         frame.fill_text(canvas::Text {
                             content,
                             color: Color::WHITE,
@@ -295,10 +297,6 @@ impl<Message> canvas::Program<Message> for DoomFire {
                             ..Default::default()
                         });
                     }
-
-                    let color = self.get_color(pixel_index as usize);
-
-                    frame.fill_rectangle(position, pixel_size_widget, color);
                 }
             }
         });
