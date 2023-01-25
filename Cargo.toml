@@ -1,0 +1,12 @@
+[package]
+name = "doom_fire"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+iced = { version = "0.7.0", features = ["canvas", "tokio"] }
+iced_native = "0.8.0"
+rand = "0.8.5"
+time = { version = "0.3.5", features = ["local-offset"] }
