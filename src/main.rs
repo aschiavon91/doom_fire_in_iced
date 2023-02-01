@@ -1,6 +1,6 @@
-use iced::widget::canvas::{Cache, Cursor, Geometry};
+use iced::widget::canvas::{Cache, Cursor, Geometry, Path, Stroke};
 use iced::widget::{canvas, container};
-use iced::{executor, window, Event, Size};
+use iced::{alignment, executor, window, Event, Size};
 use iced::{keyboard, Settings};
 use iced::{Application, Color, Command, Element, Length, Point, Rectangle, Subscription, Theme};
 use rand::prelude::*;
@@ -38,7 +38,7 @@ pub struct DoomFire {
 
 impl DoomFire {
     pub fn new(width: u32, height: u32, pixel_size: u32) -> DoomFire {
-        let pixel_count = (width / pixel_size) * (height / pixel_size);
+        let pixel_count = ((width / pixel_size) + 1) * ((height / pixel_size) + 1);
         let fire = vec![0; pixel_count as usize];
 
         DoomFire {
@@ -50,15 +50,15 @@ impl DoomFire {
     }
 
     fn resize_fire(&mut self) {
-        let cols = self.size.0 / self.pixel_size;
-        let rows = self.size.1 / self.pixel_size;
+        let cols = (self.size.0 / self.pixel_size) + 1;
+        let rows = (self.size.1 / self.pixel_size) + 1;
         let total_pixels: u32 = cols * rows;
         self.fire.resize(total_pixels as usize, 0);
     }
 
     fn generate_fire_source(&mut self) {
-        let cols = self.size.0 / self.pixel_size;
-        let rows = self.size.1 / self.pixel_size;
+        let cols = (self.size.0 / self.pixel_size) + 1;
+        let rows = (self.size.1 / self.pixel_size) + 1;
 
         let total_pixels = cols * rows;
         let mut fire = vec![0; total_pixels as usize];
@@ -72,8 +72,8 @@ impl DoomFire {
     }
 
     fn calculate_fire_propagation(&mut self) {
-        let cols = self.size.0 / self.pixel_size;
-        let rows = self.size.1 / self.pixel_size;
+        let cols = (self.size.0 / self.pixel_size) + 1;
+        let rows = (self.size.1 / self.pixel_size) + 1;
 
         for row in 0..rows {
             for col in 0..cols {
@@ -87,6 +87,8 @@ impl DoomFire {
                 let decay: u32 = rng.gen_range(0..3);
 
                 let below_pixel_intensity = self.fire[below_pixel_index as usize];
+
+                // need to find a better solution to this conversions
                 let temp_new_intensity = below_pixel_intensity as i32 - decay as i32;
 
                 let new_pixel_intensity = if temp_new_intensity >= 0 {
@@ -265,8 +267,8 @@ impl<Message> canvas::Program<Message> for DoomFire {
             // Background Color
             frame.fill_rectangle(Point { x: 0.0, y: 0.0 }, bounds.size(), Color::BLACK);
 
-            let rows = self.size.1 / self.pixel_size;
-            let columns = self.size.0 / self.pixel_size;
+            let rows = (self.size.1 / self.pixel_size) + 1;
+            let columns = (self.size.0 / self.pixel_size) + 1;
             let pixel_size_widget = Size::new(self.pixel_size as f32, self.pixel_size as f32);
 
             for row in 0..rows {
@@ -283,17 +285,25 @@ impl<Message> canvas::Program<Message> for DoomFire {
                     frame.fill_rectangle(position, pixel_size_widget, color);
 
                     if self.debug {
-                        let content = if let Some(value) = self.fire.get(pixel_index as usize) {
-                            value.to_string()
-                        } else {
-                            String::from("-1")
+                        let debug_color = color.inverse();
+
+                        frame.stroke(
+                            &Path::rectangle(position, pixel_size_widget),
+                            Stroke::default().with_color(debug_color),
+                        );
+
+                        let text_position = Point {
+                            x: position.x + (self.pixel_size as f32 * 0.5),
+                            y: position.y + (self.pixel_size as f32 * 0.5),
                         };
 
                         frame.fill_text(canvas::Text {
-                            content,
-                            color: Color::WHITE,
-                            position,
-                            size: self.pixel_size as f32 * 0.8,
+                            content: self.fire[pixel_index as usize].to_string(),
+                            color: debug_color,
+                            position: text_position,
+                            horizontal_alignment: alignment::Horizontal::Center,
+                            vertical_alignment: alignment::Vertical::Center,
+                            size: self.pixel_size as f32 * 0.7,
                             ..Default::default()
                         });
                     }
